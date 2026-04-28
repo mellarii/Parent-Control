@@ -94,5 +94,5 @@ parent-control/
 Проект распространяется свободно.
 
 Авторы: 
-**Mellarii** — [https://github.com/mellarii](https://github.com/mellarii)
-**flelyfe** —  [https://github.com/flelyfe](https://github.com/flelyfe)
+* **Mellarii** — [https://github.com/mellarii](https://github.com/mellarii)
+* **flelyfe** —  [https://github.com/flelyfe](https://github.com/flelyfe)
