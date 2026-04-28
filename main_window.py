@@ -4,18 +4,27 @@ from PyQt6.QtWidgets import  (QWidget, QLabel, QPushButton, QMessageBox)
 from StateWindow import StateWindow 
 from BlacklistWindow import BlacklistWindow
 from SettingsWindow import SettingsWindow
+from WindowTracker import WindowTracker
 
 class ParentControlApp(QWidget):
   def __init__(self):
     super().__init__()
     self.time_seconds = 0
+    
+    # Initialize window tracker
+    self.tracker = WindowTracker()
 
     self.state_win = StateWindow(self)
+    self.state_win.set_tracker(self.tracker)
+    
     self.blacklist_win = BlacklistWindow(self)
     self.settings_win = SettingsWindow(self)
 
     self.init_ui()
     self.init_timer()
+    
+    # Start tracking
+    self.tracker.start()
 
   def init_ui(self):
     lenght = 390 
@@ -69,3 +78,8 @@ class ParentControlApp(QWidget):
     else:
       self.clock.start(1000)
       self.start_btn.setText("Running...")
+  
+  def closeEvent(self, event):
+    """Stop tracker when closing application"""
+    self.tracker.stop()
+    super().closeEvent(event)
