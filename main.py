@@ -8,6 +8,7 @@ def main():
   window = ParentControlApp()
   window.show()
   sys.exit(app.exec())
+  app.setWindowIcon(QIcon("icon.ico"))
 
 if __name__ == "__main__":
     main()

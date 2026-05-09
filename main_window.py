@@ -4,22 +4,30 @@ from PyQt6.QtWidgets import  (QWidget, QLabel, QPushButton, QMessageBox)
 from StateWindow import StateWindow 
 from BlacklistWindow import BlacklistWindow
 from SettingsWindow import SettingsWindow
+from WindowTracker import WindowTracker
 
 class ParentControlApp(QWidget):
   def __init__(self):
     super().__init__()
     self.time_seconds = 0
 
+    self.tracker = WindowTracker()
+
     self.state_win = StateWindow(self)
+    self.state_win.set_tracker(self.tracker)
+    
     self.blacklist_win = BlacklistWindow(self)
     self.settings_win = SettingsWindow(self)
 
     self.init_ui()
     self.init_timer()
 
-  def init_ui(self): 
+    self.tracker.start()
+
+  def init_ui(self):
+    lenght = 390 
     self.setWindowTitle("Parent Control")  
-    self.resize(390,540)
+    self.resize(lenght,540)
 
     self.main_text = QLabel("Start protecting", self)
     self.main_text.resize(400,100)
@@ -30,18 +38,13 @@ class ParentControlApp(QWidget):
     self.timerMain.resize(400, 100)
     self.timerMain.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-    self.timerState = QLabel("00:00", self.state_win) 
-    self.timerState.move(0,15)
-    self.timerState.resize(400, 100)
-    self.timerState.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
     self.start_btn = QPushButton("Start", self)
     self.start_btn.move(160, 270)
     self.settings_btn = QPushButton("Settings", self)
     self.settings_btn.move(15, 15)
     self.state_btn = QPushButton("Device activity statistics", self)
     self.state_btn.move(15, 465)
-    self.blacklist_btn = QPushButton("Add new sites to blacklist.", self)
+    self.blacklist_btn = QPushButton("Manage blocked sites", self)
     self.blacklist_btn.move(15, 500)
 
     self.start_btn.clicked.connect(self.startLogic)
@@ -56,15 +59,17 @@ class ParentControlApp(QWidget):
         
   def tick(self):
     self.time_seconds += 1
-    minutes = self.time_seconds //60
-    seconds = self.time_seconds % 60
-    self.timerMain.setText(f"{minutes:02}:{seconds:02}")
-    self.timerState.setText(f"{minutes:02}:{seconds:02}")
+    total_seconds = self.time_seconds
+    hours = total_seconds // 3600
+    minutes = (total_seconds % 3600) // 60
+    seconds = total_seconds % 60
+    self.timerMain.setText(f"{hours:02}:{minutes:02}:{seconds:02}")
 
     limit = self.state_win.getLimit()
-    if limit > 0 and minutes >= limit:
-      self.clock.stop()
-      QMessageBox.warning(self, "Warning", "Limit time exceeded")
+    total_minutes = total_seconds // 60
+    if limit > 0 and total_minutes >= limit:
+        self.clock.stop()
+        QMessageBox.warning(self, "Warning", "Time limit exceeded")
     
 
   def startLogic(self):
@@ -74,3 +79,8 @@ class ParentControlApp(QWidget):
     else:
       self.clock.start(1000)
       self.start_btn.setText("Running...")
+  
+  def closeEvent(self, event):
+    """Stop tracker when closing application"""
+    self.tracker.stop()
+    super().closeEvent(event)
