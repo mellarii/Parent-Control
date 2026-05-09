@@ -40,9 +40,9 @@ class WindowTracker:
         """Get the title of the active window"""
         try:
             hwnd = ctypes.windll.user32.GetForegroundWindow()
-            length = ctypes.windll.user32.GetWindowTextLength(hwnd)
+            length = ctypes.windll.user32.GetWindowTextLengthW(hwnd)
             buf = ctypes.create_unicode_buffer(length + 1)
-            ctypes.windll.user32.GetWindowTextA(hwnd, buf, length + 1)
+            ctypes.windll.user32.GetWindowTextW(hwnd, buf, length + 1)
             return buf.value
         except Exception:
             return ""
@@ -52,11 +52,9 @@ class WindowTracker:
         if not title:
             return None
         
-        # Check if it's a browser window
         if "firefox" not in title.lower() and "chrome" not in title.lower() and "edge" not in title.lower():
             return None
         
-        # Remove browser name
         title = title.lower()
         title = title.replace(" — mozilla firefox", "").replace(" — google chrome", "").replace(" — microsoft edge", "")
         title = title.replace("mozilla firefox", "").replace("google chrome", "").replace("microsoft edge", "")
@@ -65,7 +63,6 @@ class WindowTracker:
         if not title:
             return None
         
-        # Try to extract domain patterns (with dots like example.com)
         url_pattern = r'(?:https?://)?(?:www\.)?([a-zA-Z0-9](?:[a-zA-Z0-9\-]*[a-zA-Z0-9])?(?:\.[a-zA-Z]{2,})+)'
         match = re.search(url_pattern, title)
         
@@ -75,14 +72,11 @@ class WindowTracker:
                 domain = domain[4:]
             return domain
         
-        # If no domain with dots found, extract first meaningful word (for sites like "Telegram Web")
         words = title.split()
         if words:
             first_word = words[0].strip('[]()«»"\'').lower()
-            # Filter out common non-domain words
             common_words = ["the", "a", "an", "and", "or", "page", "tab", "new", "home", "search"]
             if first_word and first_word not in common_words and len(first_word) > 1:
-                # Clean special characters
                 first_word = re.sub(r'[^a-z0-9\-]', '', first_word)
                 if first_word:
                     return first_word
@@ -104,7 +98,7 @@ class WindowTracker:
     def track(self):
         """Main tracking loop"""
         last_domain = None
-        check_interval = 1  # Check every 1 second
+        check_interval = 1  
         
         while self.running:
             try:

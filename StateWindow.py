@@ -8,13 +8,11 @@ class StateWindow(QWidget):
     self.setWindowTitle("Statistics")
     self.setFixedSize(700, 500)
     self.settings = QSettings("Mellarii", "ParentControl")
-    self.tracker = None  # Will be set by main_window
-    
-    # Create tab widget
+    self.tracker = None 
+
     self.tabs = QTabWidget(self)
     self.tabs.setGeometry(10, 10, 680, 480)
-    
-    # Tab 1: Time Limit
+
     self.limit_tab = QWidget()
     self.tabs.addTab(self.limit_tab, "Time Limit")
     
@@ -30,22 +28,19 @@ class StateWindow(QWidget):
     self.UsingTimeText.move(15, 85)
 
     self.timeLimit.setText(self.settings.value("time_limit", ""))
-    
-    # Tab 2: Site Statistics
+
     self.stats_tab = QWidget()
     self.tabs.addTab(self.stats_tab, "Site Statistics")
     
     stats_layout = QVBoxLayout(self.stats_tab)
     stats_layout.setContentsMargins(10, 10, 10, 10)
-    
-    # Header
+
     header_label = QLabel("Time spent on each site:")
     header_font = QFont()
     header_font.setBold(True)
     header_label.setFont(header_font)
     stats_layout.addWidget(header_label)
-    
-    # Table
+
     self.stats_table = QTableWidget(self.stats_tab)
     self.stats_table.setColumnCount(3)
     self.stats_table.setHorizontalHeaderLabels(["Site", "Time", "Visits"])
@@ -54,7 +49,6 @@ class StateWindow(QWidget):
     self.stats_table.setColumnWidth(2, 100)
     stats_layout.addWidget(self.stats_table)
     
-    # Buttons layout
     buttons_layout = QHBoxLayout()
     
     self.refresh_btn = QPushButton("Refresh", self.stats_tab)
@@ -91,16 +85,13 @@ class StateWindow(QWidget):
     self.stats_table.setRowCount(len(stats))
     
     for row, (domain, data) in enumerate(stats):
-      # Site name
       site_item = QTableWidgetItem(domain)
       self.stats_table.setItem(row, 0, site_item)
-      
-      # Time spent (formatted)
+
       time_str = self.tracker.format_time(data["total_seconds"])
       time_item = QTableWidgetItem(time_str)
       self.stats_table.setItem(row, 1, time_item)
-      
-      # Visits count
+
       visits_item = QTableWidgetItem(str(data["visits"]))
       self.stats_table.setItem(row, 2, visits_item)
   
@@ -109,6 +100,10 @@ class StateWindow(QWidget):
     if self.tracker:
       self.tracker.clear_stats()
       self.refresh_stats()
+
+  def showEvent(self, event):
+    self.refresh_stats()
+    super().showEvent(event)
   
   def closeEvent(self, event):
     self.settings.setValue("time_limit", self.timeLimit.text())
