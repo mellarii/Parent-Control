@@ -24,9 +24,6 @@ class StateWindow(QWidget):
     self.timeLimit.move(15, 40)
     self.timeLimit.resize(200, 30)
 
-    self.UsingTimeText = QLabel("Today you used: ", self.limit_tab)
-    self.UsingTimeText.move(15, 85)
-
     self.timeLimit.setText(self.settings.value("time_limit", ""))
 
     self.stats_tab = QWidget()

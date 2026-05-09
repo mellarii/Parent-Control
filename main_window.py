@@ -10,8 +10,7 @@ class ParentControlApp(QWidget):
   def __init__(self):
     super().__init__()
     self.time_seconds = 0
-    
-    # Initialize window tracker
+
     self.tracker = WindowTracker()
 
     self.state_win = StateWindow(self)
@@ -22,8 +21,7 @@ class ParentControlApp(QWidget):
 
     self.init_ui()
     self.init_timer()
-    
-    # Start tracking
+
     self.tracker.start()
 
   def init_ui(self):
@@ -61,14 +59,17 @@ class ParentControlApp(QWidget):
         
   def tick(self):
     self.time_seconds += 1
-    minutes = self.time_seconds //60
-    seconds = self.time_seconds % 60
-    self.timerMain.setText(f"{minutes:02}:{seconds:02}")
+    total_seconds = self.time_seconds
+    hours = total_seconds // 3600
+    minutes = (total_seconds % 3600) // 60
+    seconds = total_seconds % 60
+    self.timerMain.setText(f"{hours:02}:{minutes:02}:{seconds:02}")
 
     limit = self.state_win.getLimit()
-    if limit > 0 and minutes >= limit:
-      self.clock.stop()
-      QMessageBox.warning(self, "Warning", "Time limit exceeded")
+    total_minutes = total_seconds // 60
+    if limit > 0 and total_minutes >= limit:
+        self.clock.stop()
+        QMessageBox.warning(self, "Warning", "Time limit exceeded")
     
 
   def startLogic(self):
