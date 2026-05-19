@@ -8,13 +8,17 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QWidget, QLineEdit, QPushButton, QMessageBox
 
 
+DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "data")
+os.makedirs(DATA_DIR, exist_ok=True)
+
+
 class BlacklistWindow(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent, Qt.WindowType.Window)
         self.setWindowTitle("Blacklist")
         self.setFixedSize(302, 124)
 
-        self.blackFile_path = "blacklist.json"
+        self.blackFile_path = os.path.join(DATA_DIR, "blacklist.json")
         self.sites = self.load_data()
 
         self.input_field = QLineEdit(self)

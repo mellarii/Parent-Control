@@ -1,0 +1,12 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "parent-control"
+version = "0.9"
+description = "Windows parental control application with timer and site blocking"
+requires-python = ">=3.8"
+dependencies = [
+    "PyQt6",
+]
