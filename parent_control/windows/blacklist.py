@@ -2,13 +2,18 @@ import json
 import os
 import socket
 import subprocess
+import sys
 from urllib.parse import urlparse
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QWidget, QLineEdit, QPushButton, QMessageBox
 
 
-DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "data")
+if getattr(sys, 'frozen', False):
+    BASE_DIR = os.path.dirname(sys.executable)
+else:
+    BASE_DIR = os.path.join(os.path.dirname(__file__), "..", "..")
+DATA_DIR = os.path.join(BASE_DIR, "data")
 os.makedirs(DATA_DIR, exist_ok=True)
 
 

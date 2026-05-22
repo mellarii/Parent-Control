@@ -2,13 +2,18 @@ import ctypes
 import json
 import os
 import re
+import sys
 import time
 from datetime import datetime
 from threading import Thread
 from urllib.parse import urlparse
 
 
-DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "data")
+if getattr(sys, 'frozen', False):
+    BASE_DIR = os.path.dirname(sys.executable)
+else:
+    BASE_DIR = os.path.join(os.path.dirname(__file__), "..", "..")
+DATA_DIR = os.path.join(BASE_DIR, "data")
 os.makedirs(DATA_DIR, exist_ok=True)
 
 

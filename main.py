@@ -1,3 +1,3 @@
-from parent_control.app import main
+from parent_control.main import main
 
 main()
