@@ -3,9 +3,10 @@ import os
 import socket
 import subprocess
 import sys
+import threading
 from urllib.parse import urlparse
 
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtWidgets import QWidget, QLineEdit, QPushButton, QMessageBox
 
 
@@ -25,6 +26,12 @@ class BlacklistWindow(QWidget):
 
         self.blackFile_path = os.path.join(DATA_DIR, "blacklist.json")
         self.sites = self.load_data()
+        self.lock = threading.RLock()
+
+        self.refresh_timer = QTimer(self)
+        self.refresh_timer.timeout.connect(self._refresh_blocked_sites_background)
+        self.refresh_timer.start(1800000)
+        QTimer.singleShot(30000, self._refresh_blocked_sites_background)
 
         self.input_field = QLineEdit(self)
         self.input_field.setPlaceholderText("Enter site to block")
@@ -59,8 +66,9 @@ class BlacklistWindow(QWidget):
         return []
 
     def save_data(self):
-        with open(self.blackFile_path, "w", encoding="utf-8") as f:
-            json.dump(self.sites, f, indent=4, ensure_ascii=False)
+        with self.lock:
+            with open(self.blackFile_path, "w", encoding="utf-8") as f:
+                json.dump(self.sites, f, indent=4, ensure_ascii=False)
 
     def normalize_site(self, text):
         text = text.strip().lower()
@@ -107,6 +115,58 @@ class BlacklistWindow(QWidget):
         if result.returncode != 0:
             QMessageBox.warning(self, "Firewall error", result.stderr.strip() or "Cannot delete rule")
 
+    def _block_ip_silent(self, site_name, ip):
+        rule_name = f"ParentControl_Block_{site_name}_{ip.replace(':', '_')}"
+        cmd = (
+            f'New-NetFirewallRule -DisplayName "{rule_name}" '
+            f'-Direction Outbound -Action Block -RemoteAddress "{ip}"'
+        )
+        self.run_powershell(cmd)
+
+    def _unblock_ip_silent(self, site_name, ip):
+        rule_name = f"ParentControl_Block_{site_name}_{ip.replace(':', '_')}"
+        cmd = f'Remove-NetFirewallRule -DisplayName "{rule_name}" -Confirm:$false'
+        self.run_powershell(cmd)
+
+    def _refresh_blocked_sites_background(self):
+        thread = threading.Thread(target=self._do_refresh_blocked_sites, daemon=True)
+        thread.start()
+
+    def _do_refresh_blocked_sites(self):
+        with self.lock:
+            sites_copy = [(i, dict(item)) for i, item in enumerate(self.sites) if isinstance(item, dict)]
+
+        results = {}
+        for idx, item in sites_copy:
+            site = item["site"]
+            old_ips = set(item["ips"])
+
+            new_ips = set()
+            try:
+                for info in socket.getaddrinfo(site, 80, proto=socket.IPPROTO_TCP):
+                    new_ips.add(info[4][0])
+            except socket.gaierror:
+                continue
+
+            ips_to_add = new_ips - old_ips
+            ips_to_remove = old_ips - new_ips
+
+            for ip in ips_to_add:
+                self._block_ip_silent(site, ip)
+            for ip in ips_to_remove:
+                self._unblock_ip_silent(site, ip)
+
+            if ips_to_add or ips_to_remove:
+                item["ips"] = list(new_ips)
+                results[idx] = item
+
+        if results:
+            with self.lock:
+                for idx, item in results.items():
+                    if idx < len(self.sites) and isinstance(self.sites[idx], dict) and self.sites[idx].get("site", "") == item["site"]:
+                        self.sites[idx] = item
+                self.save_data()
+
     def show_sites(self):
         if not self.sites:
             QMessageBox.information(self, "Blocked sites", "Empty")
@@ -145,8 +205,9 @@ class BlacklistWindow(QWidget):
         for ip in ips:
             self.block_ip(site, ip)
 
-        self.sites.append({"site": site, "ips": ips})
-        self.save_data()
+        with self.lock:
+            self.sites.append({"site": site, "ips": ips})
+            self.save_data()
         self.input_field.clear()
 
     def delete_site(self):
@@ -173,12 +234,14 @@ class BlacklistWindow(QWidget):
             return
 
         self.delete_rules_by_pattern(f"ParentControl_Block_{site}_*")
-        self.sites = new_sites
-        self.save_data()
+        with self.lock:
+            self.sites = new_sites
+            self.save_data()
         self.input_field.clear()
 
     def clear_all(self):
         self.delete_rules_by_pattern("ParentControl_Block_*")
-        self.sites = []
-        self.save_data()
+        with self.lock:
+            self.sites = []
+            self.save_data()
         self.input_field.clear()
