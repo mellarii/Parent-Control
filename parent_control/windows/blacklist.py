@@ -30,8 +30,8 @@ class BlacklistWindow(QWidget):
 
         self.refresh_timer = QTimer(self)
         self.refresh_timer.timeout.connect(self._refresh_blocked_sites_background)
-        self.refresh_timer.start(1800000)
-        QTimer.singleShot(30000, self._refresh_blocked_sites_background)
+        self.refresh_timer.start(30000)
+        QTimer.singleShot(5000, self._refresh_blocked_sites_background)
 
         self.input_field = QLineEdit(self)
         self.input_field.setPlaceholderText("Enter site to block")
@@ -105,6 +105,8 @@ class BlacklistWindow(QWidget):
         result = self.run_powershell(cmd)
         if result.returncode != 0:
             QMessageBox.warning(self, "Firewall error", result.stderr.strip() or "Cannot create rule")
+        else:
+            self._kill_connections(ip)
 
     def delete_rules_by_pattern(self, pattern):
         cmd = (
@@ -121,11 +123,21 @@ class BlacklistWindow(QWidget):
             f'New-NetFirewallRule -DisplayName "{rule_name}" '
             f'-Direction Outbound -Action Block -RemoteAddress "{ip}"'
         )
-        self.run_powershell(cmd)
+        result = self.run_powershell(cmd)
+        if result.returncode == 0:
+            self._kill_connections(ip)
 
     def _unblock_ip_silent(self, site_name, ip):
         rule_name = f"ParentControl_Block_{site_name}_{ip.replace(':', '_')}"
         cmd = f'Remove-NetFirewallRule -DisplayName "{rule_name}" -Confirm:$false'
+        self.run_powershell(cmd)
+
+    def _kill_connections(self, ip):
+        cmd = (
+            f'Get-NetTCPConnection -RemoteAddress "{ip}" -ErrorAction SilentlyContinue '
+            f'| Where-Object {{ $_.State -eq "Established" }} '
+            f'| Remove-NetTCPConnection -Confirm:$false -ErrorAction SilentlyContinue'
+        )
         self.run_powershell(cmd)
 
     def _refresh_blocked_sites_background(self):
