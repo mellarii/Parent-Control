@@ -14,17 +14,15 @@ build/
 dist/
 *.spec
 
-
 *.log
 *.manifest
-
 
 Thumbs.db
 Desktop.ini
 
-
-blacklist.json
 *.log
 
 *~
 *.bak
+
+data/
