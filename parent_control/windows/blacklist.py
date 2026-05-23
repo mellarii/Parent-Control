@@ -30,7 +30,7 @@ class BlacklistWindow(QWidget):
 
         self.refresh_timer = QTimer(self)
         self.refresh_timer.timeout.connect(self._refresh_blocked_sites_background)
-        self.refresh_timer.start(30000)
+        self.refresh_timer.start(5000)
         QTimer.singleShot(5000, self._refresh_blocked_sites_background)
 
         self.input_field = QLineEdit(self)
@@ -92,7 +92,8 @@ class BlacklistWindow(QWidget):
         result = subprocess.run(
             ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", command],
             capture_output=True,
-            text=True
+            text=True,
+            creationflags=subprocess.CREATE_NO_WINDOW
         )
         return result
 
