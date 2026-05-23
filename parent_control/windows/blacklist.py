@@ -7,7 +7,7 @@ import threading
 from urllib.parse import urlparse
 
 from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtWidgets import QWidget, QLineEdit, QPushButton, QMessageBox
+from PyQt6.QtWidgets import QWidget, QLineEdit, QPushButton, QMessageBox, QListWidget
 
 
 if getattr(sys, 'frozen', False):
@@ -22,7 +22,7 @@ class BlacklistWindow(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent, Qt.WindowType.Window)
         self.setWindowTitle("Blacklist")
-        self.setFixedSize(302, 124)
+        self.setFixedSize(400, 350)
 
         self.blackFile_path = os.path.join(DATA_DIR, "blacklist.json")
         self.sites = self.load_data()
@@ -35,11 +35,7 @@ class BlacklistWindow(QWidget):
 
         self.input_field = QLineEdit(self)
         self.input_field.setPlaceholderText("Enter site to block")
-        self.input_field.setGeometry(20, 20, 260, 30)
-
-        self.watchSites_btn = QPushButton("View blocked sites", self)
-        self.watchSites_btn.move(20, 87)
-        self.watchSites_btn.clicked.connect(self.show_sites)
+        self.input_field.setGeometry(20, 20, 360, 30)
 
         self.add_btn = QPushButton("Add site", self)
         self.add_btn.move(20, 57)
@@ -52,6 +48,10 @@ class BlacklistWindow(QWidget):
         self.clear_btn = QPushButton("Clear all sites", self)
         self.clear_btn.move(190, 57)
         self.clear_btn.clicked.connect(self.clear_all)
+
+        self.site_list = QListWidget(self)
+        self.site_list.setGeometry(20, 90, 360, 240)
+        self.populate_list()
 
     def load_data(self):
         if not os.path.exists(self.blackFile_path):
@@ -69,6 +69,14 @@ class BlacklistWindow(QWidget):
         with self.lock:
             with open(self.blackFile_path, "w", encoding="utf-8") as f:
                 json.dump(self.sites, f, indent=4, ensure_ascii=False)
+
+    def populate_list(self):
+        self.site_list.clear()
+        for item in self.sites:
+            if isinstance(item, dict):
+                self.site_list.addItem(item.get("site", ""))
+            else:
+                self.site_list.addItem(str(item))
 
     def normalize_site(self, text):
         text = text.strip().lower()
@@ -180,20 +188,6 @@ class BlacklistWindow(QWidget):
                         self.sites[idx] = item
                 self.save_data()
 
-    def show_sites(self):
-        if not self.sites:
-            QMessageBox.information(self, "Blocked sites", "Empty")
-            return
-
-        text_lines = []
-        for item in self.sites:
-            if isinstance(item, dict):
-                text_lines.append(item.get("site", ""))
-            else:
-                text_lines.append(str(item))
-
-        QMessageBox.information(self, "Blocked sites", "\n".join(text_lines))
-
     def add_site(self):
         site = self.normalize_site(self.input_field.text())
         if not site:
@@ -222,6 +216,7 @@ class BlacklistWindow(QWidget):
             self.sites.append({"site": site, "ips": ips})
             self.save_data()
         self.input_field.clear()
+        self.populate_list()
 
     def delete_site(self):
         site = self.normalize_site(self.input_field.text())
@@ -251,6 +246,7 @@ class BlacklistWindow(QWidget):
             self.sites = new_sites
             self.save_data()
         self.input_field.clear()
+        self.populate_list()
 
     def clear_all(self):
         self.delete_rules_by_pattern("ParentControl_Block_*")
@@ -258,3 +254,4 @@ class BlacklistWindow(QWidget):
             self.sites = []
             self.save_data()
         self.input_field.clear()
+        self.populate_list()
