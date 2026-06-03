@@ -6,7 +6,7 @@ class SettingsWindow(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent, Qt.WindowType.Window)
         self.setWindowTitle("Settings")
-        self.setFixedSize(400, 150)
+        self.setFixedSize(112, 120)
         self.settings = QSettings("Mellarii", "ParentControl")
 
         # self.parentLabel = QLabel("Parent: ", self)
@@ -27,13 +27,16 @@ class SettingsWindow(QWidget):
         # self.childName.setText(self.settings.value("child_name", ""))
 
         self.pinkTheme_btn = QPushButton("Pink Theme", self)
-        self.pinkTheme_btn.move(15, 10)
+        self.pinkTheme_btn.move(12, 10)
+        self.pinkTheme_btn.resize()
         self.pinkTheme_btn.clicked.connect(lambda: self.apply_theme("pink"))
         self.whiteTheme_btn = QPushButton("White Theme", self)
-        self.whiteTheme_btn.move(15, 20)
+        self.whiteTheme_btn.move(12, 40)
+        self.whiteTheme_btn.resize()
         self.whiteTheme_btn.clicked.connect(lambda: self.apply_theme("white"))
         self.whiteTheme_btn = QPushButton("Dark Theme", self)
-        self.whiteTheme_btn.move(15, 30)
+        self.whiteTheme_btn.resize()
+        self.whiteTheme_btn.move(12, 70)
         self.whiteTheme_btn.clicked.connect(lambda: self.apply_theme("default"))
 
     def closeEvent(self, event):
